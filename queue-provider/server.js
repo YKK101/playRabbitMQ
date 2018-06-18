@@ -3,7 +3,8 @@ const amqp = require('amqplib')
 
 const PORT = 7000
 const RABBIT_URL = 'amqp://icxuixvf:Y8tnrMAZH6TXrAWipO_cF6FffOovSroT@mustang.rmq.cloudamqp.com/icxuixvf'
-const UPDATE_QUEUE = 'source_updated'
+const UPDATE_QUEUE = 'source_updated' 
+const BROADCAST = 'ex'
 
 let channel
 amqp.connect(RABBIT_URL)
@@ -18,11 +19,15 @@ amqp.connect(RABBIT_URL)
 const app = express()
 
 app.get('/provide', (req, res) => {
-  channel.assertQueue(UPDATE_QUEUE, {
-    durable: false,
-  })
+  channel.assertExchange(BROADCAST, 'fanout', { durable: false })
+  channel.publish(BROADCAST, '', new Buffer('update!'))
 
-  channel.sendToQueue(UPDATE_QUEUE, new Buffer('update!'))
+  // BASIC QUEUE
+  // channel.assertQueue(UPDATE_QUEUE, {
+  //   durable: false,
+  // })
+
+  // channel.sendToQueue(UPDATE_QUEUE, new Buffer('update!'))
 
   console.log('UPDATE_QUEUE sent')
   res.send({ status: 'success' })
